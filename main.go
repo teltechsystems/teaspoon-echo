@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"github.com/teltechsystems/teaspoon"
 	"github.com/teltechsystems/teaspoon/binders"
+	"io"
 	"math/rand"
+	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -55,6 +58,22 @@ func NewRandomDataBinder() *RandomDataBinder {
 	return binder
 }
 
+type Webhookr struct {
+}
+
+func (w *Webhookr) OnClientConnect(c io.ReadWriteCloser) error {
+	http.PostForm("http://webhookr.com/CUkVA", url.Values{
+		"Event": {"CONNECT"},
+	})
+	return nil
+}
+
+func (w *Webhookr) OnClientDisconnect(c io.ReadWriteCloser) {
+	http.PostForm("http://webhookr.com/CUkVA", url.Values{
+		"Event": {"DISCONNECT"},
+	})
+}
+
 func handler(w teaspoon.ResponseWriter, r *teaspoon.Request) {
 	switch r.Resource {
 	case 1:
@@ -72,5 +91,6 @@ func main() {
 	server := &teaspoon.Server{Addr: ":" + os.Getenv("PORT"), Handler: teaspoon.HandlerFunc(handler)}
 	server.AddBinder(binders.NewPinger(time.Second * 15))
 	server.AddBinder(NewRandomDataBinder())
+	server.AddBinder(&Webhookr{})
 	fmt.Println(server.ListenAndServe())
 }
